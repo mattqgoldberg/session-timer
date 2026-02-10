@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Session Timer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <h1>Session Timer</h1>
+    </header>
+    <aside class="stats-card">
+      <h2>Statistics</h2>
+      <div class="stats-range">
+        <button type="button" class="stats-range-btn" data-range="week">This week</button>
+        <button type="button" class="stats-range-btn" data-range="month">This month</button>
+        <button type="button" class="stats-range-btn" data-range="year">This year</button>
+        <button type="button" class="stats-range-btn active" data-range="all">All time</button>
+      </div>
+      <div class="stats-chart-wrap">
+        <svg id="stats-pie-chart" class="stats-pie-chart" viewBox="-8 -8 116 116" aria-hidden="true"></svg>
+        <p id="stats-no-data" class="stats-no-data" hidden>No sessions in this period</p>
+      </div>
+      <ul id="stats-category-list" class="stats-category-list"></ul>
+    </aside>
+    <div class="app-sections-top">
+      <section class="categories">
+        <h2>Categories</h2>
+        <div class="add-category">
+          <input type="text" id="category-input" placeholder="New category name" />
+          <button type="button" id="add-category-btn">Add category</button>
+        </div>
+        <ul id="category-list" class="category-list" aria-label="Category list"></ul>
+        <p id="no-categories-msg" class="no-categories-msg" hidden>Add a category to get started.</p>
+      </section>
+      <section class="session-controls">
+        <h2>Session</h2>
+        <p id="selected-category" class="selected-category">No category selected</p>
+        <div class="stopwatch" id="stopwatch" aria-live="polite">00:00:00</div>
+        <div class="buttons">
+          <button type="button" id="start-session-btn" disabled>Start session</button>
+          <button type="button" id="stop-session-btn" hidden>Stop session</button>
+        </div>
+      </section>
+    </div>
+    <section class="data-io-card">
+      <h2>Data</h2>
+      <div class="data-io-buttons">
+        <button type="button" id="export-data-btn">Export</button>
+        <button type="button" id="import-data-btn">Import</button>
+        <input type="file" id="import-data-input" accept=".json,application/json" hidden />
+      </div>
+    </section>
+    <section class="recent-sessions">
+      <h2>Recent sessions</h2>
+      <ul id="session-list" class="session-list"></ul>
+      <p id="no-sessions-msg" class="no-sessions-msg" hidden>No sessions yet.</p>
+    </section>
+  </div>
+  <script type="module" src="/src/app.js"></script>
+</body>
+</html>
