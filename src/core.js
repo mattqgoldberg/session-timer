@@ -4,6 +4,12 @@ const STORAGE_KEYS = {
   active: 'session_timer_active',
 };
 
+let onDataChange = null;
+
+export function setOnDataChange(fn) {
+  onDataChange = typeof fn === 'function' ? fn : null;
+}
+
 function getStorage() {
   return typeof globalThis !== 'undefined' && globalThis.localStorage;
 }
@@ -22,6 +28,7 @@ export function getCategories() {
 export function setCategories(categories) {
   const storage = getStorage();
   if (storage) storage.setItem(STORAGE_KEYS.categories, JSON.stringify(categories));
+  onDataChange?.();
 }
 
 export function getSessions() {
@@ -38,6 +45,7 @@ export function getSessions() {
 export function setSessions(sessions) {
   const storage = getStorage();
   if (storage) storage.setItem(STORAGE_KEYS.sessions, JSON.stringify(sessions));
+  onDataChange?.();
 }
 
 export function getActiveSession() {
@@ -59,6 +67,7 @@ export function setActiveSession(active) {
   } else {
     storage.removeItem(STORAGE_KEYS.active);
   }
+  onDataChange?.();
 }
 
 export function formatDuration(ms) {

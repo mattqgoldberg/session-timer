@@ -289,6 +289,58 @@ header h1 {
   font-weight: 700;
 }
 
+.auth-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.auth-btn {
+  padding: 0.4rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+  color: #333;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.auth-btn-secondary {
+  background: transparent;
+  border-color: #ddd;
+  color: #666;
+  font-size: 0.75rem;
+}
+
+.auth-btn-secondary:hover:not(:disabled) {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.auth-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: #555;
+}
+
+.auth-user-info[hidden] {
+  display: none !important;
+}
+
+#auth-user-name {
+  font-weight: 500;
+}
+
 section {
   background: #fff;
   border-radius: 8px;
@@ -585,6 +637,10 @@ button:disabled {
   button {
     min-height: 44px;
     padding: 0.6rem 1rem;
+  }
+
+  .auth-btn {
+    min-height: 40px;
   }
 
   .icon-btn {
