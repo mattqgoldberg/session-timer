@@ -10,6 +10,13 @@
   <div class="layout">
     <header>
       <h1>Session Timer</h1>
+      <div class="auth-bar" id="auth-bar">
+        <button type="button" id="auth-sign-in-btn" class="auth-btn">Sign in with Google</button>
+        <div id="auth-user-info" class="auth-user-info" hidden>
+          <span id="auth-user-name"></span>
+          <button type="button" id="auth-sign-out-btn" class="auth-btn auth-btn-secondary">Sign out</button>
+        </div>
+      </div>
     </header>
     <aside class="stats-card">
       <h2>Statistics</h2>

@@ -11,7 +11,9 @@ import {
   aggregateByCategory,
   toDatetimeLocal,
   formatRangeLabel,
+  setOnDataChange,
 } from './core.js';
+import { signInWithGoogle, firebaseSignOut, onAuthChange, pushToFirestore, pullFromFirestore } from './firebase.js';
 
 const categoryInput = document.getElementById('category-input');
 const addCategoryBtn = document.getElementById('add-category-btn');
@@ -37,6 +39,10 @@ const sessionPagination = document.getElementById('session-pagination');
 const sessionPrevPage = document.getElementById('session-prev-page');
 const sessionNextPage = document.getElementById('session-next-page');
 const sessionPageLabel = document.getElementById('session-page-label');
+const authSignInBtn = document.getElementById('auth-sign-in-btn');
+const authSignOutBtn = document.getElementById('auth-sign-out-btn');
+const authUserInfo = document.getElementById('auth-user-info');
+const authUserName = document.getElementById('auth-user-name');
 const exportDataBtn = document.getElementById('export-data-btn');
 const importDataBtn = document.getElementById('import-data-btn');
 const importDataInput = document.getElementById('import-data-input');
@@ -48,6 +54,8 @@ const PIE_CHART_COLORS = ['#4a90d9', '#e07c4c', '#6b9b6b', '#9b6ba8', '#c9a227',
 
 const SESSIONS_PER_PAGE = 5;
 
+let currentUid = null;
+let syncPaused = false;
 let selectedCategoryId = null;
 let stopwatchInterval = null;
 let statsRange = 'all';
@@ -434,11 +442,14 @@ if (statsCustomEnd) statsCustomEnd.addEventListener('change', () => { customEnd 
 if (sessionPrevPage) sessionPrevPage.addEventListener('click', () => { sessionsPage--; renderSessionList(); });
 if (sessionNextPage) sessionNextPage.addEventListener('click', () => { sessionsPage++; renderSessionList(); });
 
+if (authSignInBtn) authSignInBtn.addEventListener('click', () => signInWithGoogle().catch(() => {}));
+if (authSignOutBtn) authSignOutBtn.addEventListener('click', () => firebaseSignOut().catch(() => {}));
+
 if (exportDataBtn) exportDataBtn.addEventListener('click', handleExport);
 if (importDataBtn) importDataBtn.addEventListener('click', () => importDataInput?.click());
 if (importDataInput) importDataInput.addEventListener('change', handleImport);
 
-function init() {
+function renderAll() {
   renderCategories();
   renderSessionList();
   renderStats();
@@ -451,10 +462,59 @@ function init() {
     renderCategories();
     startStopwatch();
   } else {
+    stopStopwatch();
+    if (startSessionBtn) startSessionBtn.hidden = false;
+    if (stopSessionBtn) stopSessionBtn.hidden = true;
     const cat = selectedCategoryId ? getCategories().find((c) => c.id === selectedCategoryId) : null;
     if (selectedCategoryEl) selectedCategoryEl.textContent = cat ? `Selected: ${cat.name}` : 'No category selected';
     updateStartButton();
   }
+}
+
+function updateAuthUI(user) {
+  if (user) {
+    if (authSignInBtn) authSignInBtn.hidden = true;
+    if (authUserInfo) authUserInfo.hidden = false;
+    if (authUserName) authUserName.textContent = user.displayName || user.email || 'Signed in';
+  } else {
+    if (authSignInBtn) authSignInBtn.hidden = false;
+    if (authUserInfo) authUserInfo.hidden = true;
+  }
+}
+
+function init() {
+  setOnDataChange(() => {
+    if (currentUid && !syncPaused) {
+      pushToFirestore(currentUid).catch(() => {});
+    }
+  });
+
+  renderAll();
+
+  onAuthChange(async (user) => {
+    if (user) {
+      currentUid = user.uid;
+      updateAuthUI(user);
+      try {
+        const data = await pullFromFirestore(user.uid);
+        if (data) {
+          syncPaused = true;
+          setCategories(data.categories);
+          setSessions(data.sessions);
+          setActiveSession(data.active);
+          syncPaused = false;
+          renderAll();
+        } else {
+          await pushToFirestore(user.uid);
+        }
+      } catch {
+        // Firestore unavailable -- continue with local data
+      }
+    } else {
+      currentUid = null;
+      updateAuthUI(null);
+    }
+  });
 }
 
 init();
