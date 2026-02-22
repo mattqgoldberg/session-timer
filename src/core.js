@@ -82,27 +82,48 @@ export function formatDurationLong(ms) {
   return parts.length ? parts.join(', ') : '0 minutes';
 }
 
-export function getStatsRangeBounds(range) {
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const LONG_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export function getStatsRangeBounds(range, offset = 0) {
   const now = new Date();
-  let start;
-  if (range === 'week') {
+  let start, end;
+  if (range === 'day') {
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1);
+    end = new Date(end.getTime() - 1);
+  } else if (range === 'week') {
     start = new Date(now);
-    const day = start.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    start.setDate(start.getDate() + diff);
+    const dow = start.getDay();
+    const diff = dow === 0 ? -6 : 1 - dow;
+    start.setDate(start.getDate() + diff + offset * 7);
     start.setHours(0, 0, 0, 0);
+    end = new Date(start);
+    end.setDate(end.getDate() + 7);
+    end = new Date(end.getTime() - 1);
   } else if (range === 'month') {
-    start = new Date(now.getFullYear(), now.getMonth(), 1);
+    start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    end = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    end = new Date(end.getTime() - 1);
   } else if (range === 'year') {
-    start = new Date(now.getFullYear(), 0, 1);
+    start = new Date(now.getFullYear() + offset, 0, 1);
+    end = new Date(start.getFullYear() + 1, 0, 1);
+    end = new Date(end.getTime() - 1);
   } else {
     start = new Date(0);
+    end = now;
   }
-  return { start, end: now };
+  return { start, end };
 }
 
-export function getSessionsInRange(range) {
-  const { start, end } = getStatsRangeBounds(range);
+export function getSessionsInRange(rangeOrBounds, offset = 0) {
+  let start, end;
+  if (typeof rangeOrBounds === 'object' && rangeOrBounds !== null && 'start' in rangeOrBounds) {
+    ({ start, end } = rangeOrBounds);
+  } else {
+    ({ start, end } = getStatsRangeBounds(rangeOrBounds, offset));
+  }
   const startMs = start.getTime();
   const endMs = end.getTime();
   return getSessions().filter((s) => {
@@ -111,6 +132,27 @@ export function getSessionsInRange(range) {
     if (Number.isNaN(t)) return false;
     return t >= startMs && t <= endMs;
   });
+}
+
+export function formatRangeLabel(range, offset = 0) {
+  if (range === 'all') return 'All time';
+  const { start, end } = getStatsRangeBounds(range, offset);
+  if (range === 'day') {
+    return `${WEEKDAYS[start.getDay()]}, ${SHORT_MONTHS[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()}`;
+  }
+  if (range === 'week') {
+    if (start.getFullYear() === end.getFullYear()) {
+      return `${SHORT_MONTHS[start.getMonth()]} ${start.getDate()} \u2013 ${SHORT_MONTHS[end.getMonth()]} ${end.getDate()}, ${start.getFullYear()}`;
+    }
+    return `${SHORT_MONTHS[start.getMonth()]} ${start.getDate()}, ${start.getFullYear()} \u2013 ${SHORT_MONTHS[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`;
+  }
+  if (range === 'month') {
+    return `${LONG_MONTHS[start.getMonth()]} ${start.getFullYear()}`;
+  }
+  if (range === 'year') {
+    return `${start.getFullYear()}`;
+  }
+  return '';
 }
 
 export function aggregateByCategory(sessions) {

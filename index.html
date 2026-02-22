@@ -14,10 +14,24 @@
     <aside class="stats-card">
       <h2>Statistics</h2>
       <div class="stats-range">
-        <button type="button" class="stats-range-btn" data-range="week">This week</button>
-        <button type="button" class="stats-range-btn" data-range="month">This month</button>
-        <button type="button" class="stats-range-btn" data-range="year">This year</button>
-        <button type="button" class="stats-range-btn active" data-range="all">All time</button>
+        <div class="stats-range-modes">
+          <button type="button" class="stats-range-btn" data-range="day">Day</button>
+          <button type="button" class="stats-range-btn" data-range="week">Week</button>
+          <button type="button" class="stats-range-btn" data-range="month">Month</button>
+          <button type="button" class="stats-range-btn" data-range="year">Year</button>
+          <button type="button" class="stats-range-btn active" data-range="all">All</button>
+          <button type="button" class="stats-range-btn" data-range="custom">Custom</button>
+        </div>
+        <div class="stats-range-nav" id="stats-range-nav" hidden>
+          <button type="button" class="stats-nav-btn" id="stats-prev-btn" aria-label="Previous period">&lsaquo;</button>
+          <span class="stats-range-label" id="stats-range-label"></span>
+          <button type="button" class="stats-nav-btn" id="stats-next-btn" aria-label="Next period">&rsaquo;</button>
+        </div>
+        <div class="stats-range-custom" id="stats-range-custom" hidden>
+          <input type="date" id="stats-custom-start" />
+          <span class="stats-range-custom-sep">to</span>
+          <input type="date" id="stats-custom-end" />
+        </div>
       </div>
       <div class="stats-chart-wrap">
         <svg id="stats-pie-chart" class="stats-pie-chart" viewBox="-8 -8 116 116" aria-hidden="true"></svg>
@@ -57,6 +71,11 @@
       <h2>Recent sessions</h2>
       <ul id="session-list" class="session-list"></ul>
       <p id="no-sessions-msg" class="no-sessions-msg" hidden>No sessions yet.</p>
+      <div class="session-pagination" id="session-pagination" hidden>
+        <button type="button" class="session-page-btn" id="session-prev-page" aria-label="Previous page">&lsaquo;</button>
+        <span class="session-page-label" id="session-page-label"></span>
+        <button type="button" class="session-page-btn" id="session-next-page" aria-label="Next page">&rsaquo;</button>
+      </div>
     </section>
   </div>
   <script type="module" src="/src/app.js"></script>

@@ -13,6 +13,7 @@ import {
   getSessionsInRange,
   aggregateByCategory,
   toDatetimeLocal,
+  formatRangeLabel,
 } from './core.js';
 
 beforeEach(() => {
@@ -135,6 +136,49 @@ describe('getStatsRangeBounds', () => {
     const { start } = getStatsRangeBounds('year');
     expect(start.getMonth()).toBe(0);
   });
+
+  it('returns today bounds for "day" offset 0', () => {
+    const { start, end } = getStatsRangeBounds('day', 0);
+    const now = new Date();
+    expect(start.getFullYear()).toBe(now.getFullYear());
+    expect(start.getMonth()).toBe(now.getMonth());
+    expect(start.getDate()).toBe(now.getDate());
+    expect(start.getHours()).toBe(0);
+    expect(end.getDate()).toBe(now.getDate());
+    expect(end.getHours()).toBe(23);
+  });
+
+  it('returns yesterday for "day" offset -1', () => {
+    const { start } = getStatsRangeBounds('day', -1);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    expect(start.getDate()).toBe(yesterday.getDate());
+  });
+
+  it('shifts week by offset', () => {
+    const current = getStatsRangeBounds('week', 0);
+    const prev = getStatsRangeBounds('week', -1);
+    expect(prev.start.getTime()).toBe(current.start.getTime() - 7 * 24 * 60 * 60 * 1000);
+  });
+
+  it('shifts month by offset', () => {
+    const current = getStatsRangeBounds('month', 0);
+    const prev = getStatsRangeBounds('month', -1);
+    expect(prev.start.getMonth()).toBe((current.start.getMonth() + 11) % 12);
+  });
+
+  it('shifts year by offset', () => {
+    const current = getStatsRangeBounds('year', 0);
+    const prev = getStatsRangeBounds('year', -1);
+    expect(prev.start.getFullYear()).toBe(current.start.getFullYear() - 1);
+  });
+
+  it('end covers the full period for week', () => {
+    const { start, end } = getStatsRangeBounds('week', 0);
+    const diff = end.getTime() - start.getTime();
+    expect(diff).toBeGreaterThanOrEqual(6 * 24 * 60 * 60 * 1000);
+    expect(diff).toBeLessThan(8 * 24 * 60 * 60 * 1000);
+  });
 });
 
 describe('getSessionsInRange', () => {
@@ -149,6 +193,64 @@ describe('getSessionsInRange', () => {
   it('returns array for any range', () => {
     expect(getSessionsInRange('week')).toEqual([]);
     expect(Array.isArray(getSessionsInRange('month'))).toBe(true);
+  });
+
+  it('accepts explicit { start, end } bounds', () => {
+    setSessions([
+      { id: 's1', categoryId: 'c1', categoryName: 'Work', startTime: '2025-03-10T10:00:00.000Z', endTime: '2025-03-10T11:00:00.000Z' },
+      { id: 's2', categoryId: 'c1', categoryName: 'Work', startTime: '2025-04-15T09:00:00.000Z', endTime: '2025-04-15T10:00:00.000Z' },
+    ]);
+    const results = getSessionsInRange({ start: new Date('2025-03-01'), end: new Date('2025-03-31T23:59:59.999Z') });
+    expect(results).toHaveLength(1);
+    expect(results[0].id).toBe('s1');
+  });
+
+  it('respects offset parameter', () => {
+    const now = new Date();
+    const todaySession = {
+      id: 's1', categoryId: 'c1', categoryName: 'Work',
+      startTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 10).toISOString(),
+      endTime: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11).toISOString(),
+    };
+    setSessions([todaySession]);
+    expect(getSessionsInRange('day', 0)).toHaveLength(1);
+    expect(getSessionsInRange('day', -1)).toHaveLength(0);
+  });
+});
+
+describe('formatRangeLabel', () => {
+  it('returns "All time" for "all"', () => {
+    expect(formatRangeLabel('all')).toBe('All time');
+  });
+
+  it('returns weekday and date for "day"', () => {
+    const label = formatRangeLabel('day', 0);
+    const now = new Date();
+    expect(label).toContain(String(now.getFullYear()));
+    expect(label).toMatch(/^(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), /);
+  });
+
+  it('returns date range for "week"', () => {
+    const label = formatRangeLabel('week', 0);
+    expect(label).toContain('\u2013');
+  });
+
+  it('returns month and year for "month"', () => {
+    const label = formatRangeLabel('month', 0);
+    const now = new Date();
+    expect(label).toContain(String(now.getFullYear()));
+    expect(label).toMatch(/^(January|February|March|April|May|June|July|August|September|October|November|December) /);
+  });
+
+  it('returns year string for "year"', () => {
+    const now = new Date();
+    expect(formatRangeLabel('year', 0)).toBe(String(now.getFullYear()));
+  });
+
+  it('reflects offset for "month"', () => {
+    const current = formatRangeLabel('month', 0);
+    const prev = formatRangeLabel('month', -1);
+    expect(current).not.toBe(prev);
   });
 });
 

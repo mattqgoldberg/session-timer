@@ -7,10 +7,10 @@ import {
   setActiveSession,
   formatDuration,
   formatDurationLong,
-  getStatsRangeBounds,
   getSessionsInRange,
   aggregateByCategory,
   toDatetimeLocal,
+  formatRangeLabel,
 } from './core.js';
 
 const categoryInput = document.getElementById('category-input');
@@ -26,6 +26,17 @@ const noSessionsMsg = document.getElementById('no-sessions-msg');
 const statsPieChart = document.getElementById('stats-pie-chart');
 const statsNoData = document.getElementById('stats-no-data');
 const statsCategoryList = document.getElementById('stats-category-list');
+const statsRangeNav = document.getElementById('stats-range-nav');
+const statsPrevBtn = document.getElementById('stats-prev-btn');
+const statsNextBtn = document.getElementById('stats-next-btn');
+const statsRangeLabel = document.getElementById('stats-range-label');
+const statsRangeCustom = document.getElementById('stats-range-custom');
+const statsCustomStart = document.getElementById('stats-custom-start');
+const statsCustomEnd = document.getElementById('stats-custom-end');
+const sessionPagination = document.getElementById('session-pagination');
+const sessionPrevPage = document.getElementById('session-prev-page');
+const sessionNextPage = document.getElementById('session-next-page');
+const sessionPageLabel = document.getElementById('session-page-label');
 const exportDataBtn = document.getElementById('export-data-btn');
 const importDataBtn = document.getElementById('import-data-btn');
 const importDataInput = document.getElementById('import-data-input');
@@ -35,9 +46,15 @@ const DELETE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="
 
 const PIE_CHART_COLORS = ['#4a90d9', '#e07c4c', '#6b9b6b', '#9b6ba8', '#c9a227', '#5cadad', '#c75c5c', '#7a7a7a'];
 
+const SESSIONS_PER_PAGE = 5;
+
 let selectedCategoryId = null;
 let stopwatchInterval = null;
 let statsRange = 'all';
+let statsOffset = 0;
+let customStart = null;
+let customEnd = null;
+let sessionsPage = 0;
 
 function renderCategories() {
   const categories = getCategories();
@@ -220,8 +237,20 @@ function renderSessionEditForm(sessionId) {
 }
 
 function renderSessionList() {
-  const sessions = getSessions().filter((s) => s.endTime != null).reverse().slice(0, 20);
-  if (noSessionsMsg) noSessionsMsg.hidden = sessions.length > 0;
+  const allSessions = getSessions().filter((s) => s.endTime != null).reverse();
+  const totalPages = Math.max(1, Math.ceil(allSessions.length / SESSIONS_PER_PAGE));
+  if (sessionsPage >= totalPages) sessionsPage = totalPages - 1;
+  if (sessionsPage < 0) sessionsPage = 0;
+  const pageStart = sessionsPage * SESSIONS_PER_PAGE;
+  const sessions = allSessions.slice(pageStart, pageStart + SESSIONS_PER_PAGE);
+
+  if (noSessionsMsg) noSessionsMsg.hidden = allSessions.length > 0;
+  if (sessionPagination) {
+    sessionPagination.hidden = totalPages <= 1;
+    if (sessionPageLabel) sessionPageLabel.textContent = `${sessionsPage + 1} / ${totalPages}`;
+    if (sessionPrevPage) sessionPrevPage.disabled = sessionsPage === 0;
+    if (sessionNextPage) sessionNextPage.disabled = sessionsPage >= totalPages - 1;
+  }
   if (!sessionList) return;
   sessionList.innerHTML = '';
   sessions.forEach((s) => {
@@ -301,11 +330,31 @@ function renderStatsCategoryList(aggregated) {
   });
 }
 
+function updateStatsRangeUI() {
+  const isCustom = statsRange === 'custom';
+  const isAll = statsRange === 'all';
+  if (statsRangeNav) statsRangeNav.hidden = isCustom || isAll;
+  if (statsRangeCustom) statsRangeCustom.hidden = !isCustom;
+  if (statsRangeLabel && !isCustom && !isAll) {
+    statsRangeLabel.textContent = formatRangeLabel(statsRange, statsOffset);
+  }
+}
+
 function renderStats() {
-  const sessions = getSessionsInRange(statsRange);
+  let sessions;
+  if (statsRange === 'custom' && customStart && customEnd) {
+    const start = new Date(customStart + 'T00:00:00');
+    const end = new Date(customEnd + 'T23:59:59.999');
+    sessions = getSessionsInRange({ start, end });
+  } else if (statsRange === 'custom') {
+    sessions = [];
+  } else {
+    sessions = getSessionsInRange(statsRange, statsOffset);
+  }
   const aggregated = aggregateByCategory(sessions);
   renderPieChart(aggregated);
   renderStatsCategoryList(aggregated);
+  updateStatsRangeUI();
 }
 
 function handleExport() {
@@ -369,11 +418,21 @@ const statsRangeBtns = document.querySelectorAll('.stats-range-btn');
 statsRangeBtns.forEach((btn) => {
   btn.addEventListener('click', () => {
     statsRange = btn.dataset.range || 'all';
+    statsOffset = 0;
     statsRangeBtns.forEach((b) => b.classList.remove('active'));
     btn.classList.add('active');
     renderStats();
   });
 });
+
+if (statsPrevBtn) statsPrevBtn.addEventListener('click', () => { statsOffset--; renderStats(); });
+if (statsNextBtn) statsNextBtn.addEventListener('click', () => { statsOffset++; renderStats(); });
+
+if (statsCustomStart) statsCustomStart.addEventListener('change', () => { customStart = statsCustomStart.value || null; renderStats(); });
+if (statsCustomEnd) statsCustomEnd.addEventListener('change', () => { customEnd = statsCustomEnd.value || null; renderStats(); });
+
+if (sessionPrevPage) sessionPrevPage.addEventListener('click', () => { sessionsPage--; renderSessionList(); });
+if (sessionNextPage) sessionNextPage.addEventListener('click', () => { sessionsPage++; renderSessionList(); });
 
 if (exportDataBtn) exportDataBtn.addEventListener('click', handleExport);
 if (importDataBtn) importDataBtn.addEventListener('click', () => importDataInput?.click());
