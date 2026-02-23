@@ -1,24 +1,73 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCategories, setCategories } from '../core.js';
+import { COLOR_PALETTE, DEFAULT_COLOR, colorVariants, getCategoryColor } from '../colors.js';
 
-const PILL_COLORS = [
-  { bg: '#FFF7ED', text: '#EA580C', border: '#FDBA74' },
-  { bg: '#F0FDFA', text: '#0D9488', border: '#5EEAD4' },
-  { bg: '#F5F3FF', text: '#7C3AED', border: '#C4B5FD' },
-  { bg: '#FDF2F8', text: '#DB2777', border: '#F9A8D4' },
-  { bg: '#FFFBEB', text: '#D97706', border: '#FCD34D' },
-  { bg: '#ECFEFF', text: '#0891B2', border: '#67E8F9' },
-  { bg: '#FEF2F2', text: '#DC2626', border: '#FCA5A5' },
-  { bg: '#F7FEE7', text: '#65A30D', border: '#BEF264' },
-];
+function ColorPicker({ value, onChange }) {
+  return (
+    <div className="color-picker">
+      {COLOR_PALETTE.map((hex) => (
+        <button
+          key={hex}
+          type="button"
+          className={`color-dot${value === hex ? ' selected' : ''}`}
+          style={{ background: hex }}
+          onClick={() => onChange(hex)}
+          aria-label={hex}
+        />
+      ))}
+    </div>
+  );
+}
 
-function getColorForIndex(i) {
-  return PILL_COLORS[i % PILL_COLORS.length];
+function EditPopover({ cat, onSave, onDelete, onClose }) {
+  const [name, setName] = useState(cat.name);
+  const [color, setColor] = useState(getCategoryColor(cat));
+
+  function handleSave(e) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    onSave(cat.id, trimmed, color);
+  }
+
+  return (
+    <motion.div
+      className="category-edit-popover"
+      initial={{ opacity: 0, scale: 0.9, y: -8 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, y: -8 }}
+      transition={{ duration: 0.2 }}
+    >
+      <form onSubmit={handleSave}>
+        <input
+          className="input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+        />
+        <ColorPicker value={color} onChange={setColor} />
+        <div className="category-edit-actions">
+          <button type="submit" className="btn btn-primary btn-sm">Save</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            style={{ color: 'var(--color-danger)', marginLeft: 'auto' }}
+            onClick={() => onDelete(cat.id)}
+          >
+            Delete
+          </button>
+        </div>
+      </form>
+    </motion.div>
+  );
 }
 
 export default function CategoryManager({ selectedCategoryId, onSelectCategory, onDataChange }) {
   const [inputValue, setInputValue] = useState('');
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_COLOR);
+  const [editingCatId, setEditingCatId] = useState(null);
   const inputRef = useRef(null);
   const categories = getCategories();
 
@@ -27,9 +76,11 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
     if (!name) return;
     const cats = getCategories();
     const id = crypto.randomUUID ? crypto.randomUUID() : `cat_${Date.now()}`;
-    cats.push({ id, name });
+    cats.push({ id, name, color: selectedColor });
     setCategories(cats);
     setInputValue('');
+    const nextIdx = COLOR_PALETTE.indexOf(selectedColor);
+    setSelectedColor(COLOR_PALETTE[(nextIdx + 1) % COLOR_PALETTE.length]);
     onSelectCategory(id);
     onDataChange();
     inputRef.current?.focus();
@@ -37,6 +88,26 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') addCategory();
+  }
+
+  function saveEdit(id, newName, newColor) {
+    const cats = getCategories();
+    const cat = cats.find((c) => c.id === id);
+    if (cat) {
+      cat.name = newName;
+      cat.color = newColor;
+      setCategories(cats);
+      onDataChange();
+    }
+    setEditingCatId(null);
+  }
+
+  function deleteCategory(id) {
+    const cats = getCategories().filter((c) => c.id !== id);
+    setCategories(cats);
+    if (selectedCategoryId === id) onSelectCategory(null);
+    onDataChange();
+    setEditingCatId(null);
   }
 
   return (
@@ -71,34 +142,61 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
         </motion.button>
       </div>
 
+      <ColorPicker value={selectedColor} onChange={setSelectedColor} />
+
       {categories.length === 0 ? (
         <p className="empty-state">No categories yet — add one above!</p>
       ) : (
         <div className="category-pills">
           <AnimatePresence>
-            {categories.map((cat, i) => {
-              const color = getColorForIndex(i);
+            {categories.map((cat) => {
+              const cv = colorVariants(getCategoryColor(cat));
               const isSelected = cat.id === selectedCategoryId;
               return (
-                <motion.button
-                  key={cat.id}
-                  className={`category-pill${isSelected ? ' selected' : ''}`}
-                  style={{
-                    background: color.bg,
-                    color: color.text,
-                    borderColor: isSelected ? color.text : color.border,
-                  }}
-                  onClick={() => onSelectCategory(cat.id)}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {cat.name}
-                </motion.button>
+                <div key={cat.id} className="category-pill-wrapper">
+                  <motion.button
+                    className={`category-pill${isSelected ? ' selected' : ''}`}
+                    style={{
+                      background: cv.bg,
+                      color: cv.text,
+                      borderColor: isSelected ? '#1C1917' : cv.border,
+                    }}
+                    onClick={() => onSelectCategory(cat.id)}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <span className="pill-color-dot" style={{ background: getCategoryColor(cat) }} />
+                    {cat.name}
+                  </motion.button>
+                  <button
+                    className="pill-edit-btn"
+                    title="Edit category"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingCatId(editingCatId === cat.id ? null : cat.id);
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                  <AnimatePresence>
+                    {editingCatId === cat.id && (
+                      <EditPopover
+                        cat={cat}
+                        onSave={saveEdit}
+                        onDelete={deleteCategory}
+                        onClose={() => setEditingCatId(null)}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </AnimatePresence>

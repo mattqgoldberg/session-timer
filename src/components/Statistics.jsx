@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
-  getSessionsInRange, aggregateByCategory,
+  getCategories, getSessionsInRange, aggregateByCategory,
   formatRangeLabel, formatDurationLong,
 } from '../core.js';
+import { getCategoryColor } from '../colors.js';
 
-const RAW_COLORS = ['#F97316', '#14B8A6', '#8B5CF6', '#EC4899', '#F59E0B', '#06B6D4', '#EF4444', '#84CC16'];
+function getAggregatedColor(categoryId) {
+  const cats = getCategories();
+  const cat = cats.find((c) => c.id === categoryId);
+  return getCategoryColor(cat);
+}
 
 const RANGES = ['day', 'week', 'month', 'year', 'all', 'custom'];
 const RANGE_LABELS = { day: 'Day', week: 'Week', month: 'Month', year: 'Year', all: 'All', custom: 'Custom' };
@@ -31,7 +36,7 @@ function PieChart({ aggregated }) {
   let offset = 0;
   const segments = aggregated.map((item, i) => {
     const length = (item.ms / total) * circumference;
-    const seg = { length, offset, color: RAW_COLORS[i % RAW_COLORS.length] };
+    const seg = { length, offset, color: getAggregatedColor(item.categoryId) };
     offset += length;
     return seg;
   });
@@ -149,7 +154,7 @@ export default function Statistics() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: i * 0.05 }}
                 >
-                  <div className="stats-swatch" style={{ background: RAW_COLORS[i % RAW_COLORS.length] }} />
+                  <div className="stats-swatch" style={{ background: getAggregatedColor(item.categoryId) }} />
                   <span className="stats-cat-name">{item.categoryName}</span>
                   <span className="stats-cat-duration">{formatDurationLong(item.ms)}</span>
                 </motion.div>

@@ -337,7 +337,7 @@ input, select {
 }
 
 .category-pill.selected {
-  box-shadow: 0 0 0 2px var(--color-primary), 0 2px 8px rgba(249, 115, 22, 0.2);
+  box-shadow: 0 0 0 2px var(--color-heading), 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .empty-state {
@@ -345,6 +345,96 @@ input, select {
   font-size: 0.9rem;
   text-align: center;
   padding: 20px 0;
+}
+
+/* ── Color Picker ──────────────────────────────────────── */
+.color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.color-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.color-dot:hover {
+  transform: scale(1.2);
+}
+
+.color-dot.selected {
+  border-color: var(--color-heading);
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-heading);
+}
+
+.pill-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.category-pill-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pill-edit-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-card);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-muted);
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.category-pill-wrapper:hover .pill-edit-btn {
+  opacity: 1;
+}
+
+.pill-edit-btn:hover {
+  color: var(--color-primary);
+  transform: scale(1.15);
+}
+
+/* ── Category Edit Popover ─────────────────────────────── */
+.category-edit-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  min-width: 240px;
+}
+
+.category-edit-popover .input {
+  margin-bottom: 10px;
+}
+
+.category-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
 }
 
 /* ── Stopwatch ─────────────────────────────────────────── */

@@ -4,23 +4,13 @@ import {
   getCategories, getSessions, setSessions,
   formatDuration, toDatetimeLocal,
 } from '../core.js';
+import { colorVariants, getCategoryColor } from '../colors.js';
 
 const SESSIONS_PER_PAGE = 5;
 
-const BADGE_COLORS = [
-  { bg: '#FFF7ED', text: '#EA580C' },
-  { bg: '#F0FDFA', text: '#0D9488' },
-  { bg: '#F5F3FF', text: '#7C3AED' },
-  { bg: '#FDF2F8', text: '#DB2777' },
-  { bg: '#FFFBEB', text: '#D97706' },
-  { bg: '#ECFEFF', text: '#0891B2' },
-  { bg: '#FEF2F2', text: '#DC2626' },
-  { bg: '#F7FEE7', text: '#65A30D' },
-];
-
 function getBadgeColor(categoryId, categories) {
-  const idx = categories.findIndex((c) => c.id === categoryId);
-  return BADGE_COLORS[(idx >= 0 ? idx : 0) % BADGE_COLORS.length];
+  const cat = categories.find((c) => c.id === categoryId);
+  return colorVariants(getCategoryColor(cat));
 }
 
 function EditForm({ session, onSave, onCancel }) {
