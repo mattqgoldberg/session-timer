@@ -4,87 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Session Timer</title>
-  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="layout">
-    <header>
-      <h1>Session Timer</h1>
-      <div class="auth-bar" id="auth-bar">
-        <button type="button" id="auth-sign-in-btn" class="auth-btn">Sign in with Google</button>
-        <div id="auth-user-info" class="auth-user-info" hidden>
-          <span id="auth-user-name"></span>
-          <button type="button" id="auth-sign-out-btn" class="auth-btn auth-btn-secondary">Sign out</button>
-        </div>
-      </div>
-    </header>
-    <aside class="stats-card">
-      <h2>Statistics</h2>
-      <div class="stats-range">
-        <div class="stats-range-modes">
-          <button type="button" class="stats-range-btn" data-range="day">Day</button>
-          <button type="button" class="stats-range-btn" data-range="week">Week</button>
-          <button type="button" class="stats-range-btn" data-range="month">Month</button>
-          <button type="button" class="stats-range-btn" data-range="year">Year</button>
-          <button type="button" class="stats-range-btn active" data-range="all">All</button>
-          <button type="button" class="stats-range-btn" data-range="custom">Custom</button>
-        </div>
-        <div class="stats-range-nav" id="stats-range-nav" hidden>
-          <button type="button" class="stats-nav-btn" id="stats-prev-btn" aria-label="Previous period">&lsaquo;</button>
-          <span class="stats-range-label" id="stats-range-label"></span>
-          <button type="button" class="stats-nav-btn" id="stats-next-btn" aria-label="Next period">&rsaquo;</button>
-        </div>
-        <div class="stats-range-custom" id="stats-range-custom" hidden>
-          <input type="date" id="stats-custom-start" />
-          <span class="stats-range-custom-sep">to</span>
-          <input type="date" id="stats-custom-end" />
-        </div>
-      </div>
-      <div class="stats-chart-wrap">
-        <svg id="stats-pie-chart" class="stats-pie-chart" viewBox="-8 -8 116 116" aria-hidden="true"></svg>
-        <p id="stats-no-data" class="stats-no-data" hidden>No sessions in this period</p>
-      </div>
-      <ul id="stats-category-list" class="stats-category-list"></ul>
-    </aside>
-    <div class="app-sections-top">
-      <section class="categories">
-        <h2>Categories</h2>
-        <div class="add-category">
-          <input type="text" id="category-input" placeholder="New category name" />
-          <button type="button" id="add-category-btn">Add category</button>
-        </div>
-        <ul id="category-list" class="category-list" aria-label="Category list"></ul>
-        <p id="no-categories-msg" class="no-categories-msg" hidden>Add a category to get started.</p>
-      </section>
-      <section class="session-controls">
-        <h2>Session</h2>
-        <p id="selected-category" class="selected-category">No category selected</p>
-        <div class="stopwatch" id="stopwatch" aria-live="polite">00:00:00</div>
-        <div class="buttons">
-          <button type="button" id="start-session-btn" disabled>Start session</button>
-          <button type="button" id="stop-session-btn" hidden>Stop session</button>
-        </div>
-      </section>
-    </div>
-    <section class="data-io-card">
-      <h2>Data</h2>
-      <div class="data-io-buttons">
-        <button type="button" id="export-data-btn">Export</button>
-        <button type="button" id="import-data-btn">Import</button>
-        <input type="file" id="import-data-input" accept=".json,application/json" hidden />
-      </div>
-    </section>
-    <section class="recent-sessions">
-      <h2>Recent sessions</h2>
-      <ul id="session-list" class="session-list"></ul>
-      <p id="no-sessions-msg" class="no-sessions-msg" hidden>No sessions yet.</p>
-      <div class="session-pagination" id="session-pagination" hidden>
-        <button type="button" class="session-page-btn" id="session-prev-page" aria-label="Previous page">&lsaquo;</button>
-        <span class="session-page-label" id="session-page-label"></span>
-        <button type="button" class="session-page-btn" id="session-next-page" aria-label="Next page">&rsaquo;</button>
-      </div>
-    </section>
-  </div>
-  <script type="module" src="/src/app.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
