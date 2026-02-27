@@ -186,4 +186,25 @@ export function toDatetimeLocal(isoString) {
   return `${y}-${m}-${day}T${h}:${min}`;
 }
 
+export function deleteCategory(categoryId) {
+  const cats = getCategories().filter((c) => c.id !== categoryId);
+  setCategories(cats);
+
+  const sessions = getSessions();
+  let changed = false;
+  for (const s of sessions) {
+    if (s.categoryId === categoryId) {
+      s.categoryId = '__uncategorized__';
+      s.categoryName = 'Uncategorized';
+      changed = true;
+    }
+  }
+  if (changed) setSessions(sessions);
+
+  const active = getActiveSession();
+  if (active && active.categoryId === categoryId) {
+    setActiveSession({ ...active, categoryId: '__uncategorized__', categoryName: 'Uncategorized' });
+  }
+}
+
 export { STORAGE_KEYS };

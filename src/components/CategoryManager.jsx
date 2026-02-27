@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCategories, setCategories } from '../core.js';
+import { getCategories, setCategories, deleteCategory as deleteCategoryCore } from '../core.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, colorVariants, getCategoryColor } from '../colors.js';
 
 function ColorPicker({ value, onChange }) {
@@ -103,8 +103,7 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
   }
 
   function deleteCategory(id) {
-    const cats = getCategories().filter((c) => c.id !== id);
-    setCategories(cats);
+    deleteCategoryCore(id);
     if (selectedCategoryId === id) onSelectCategory(null);
     onDataChange();
     setEditingCatId(null);

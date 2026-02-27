@@ -7,6 +7,7 @@ import {
   setSessions,
   getActiveSession,
   setActiveSession,
+  deleteCategory,
   formatDuration,
   formatDurationLong,
   getStatsRangeBounds,
@@ -285,5 +286,76 @@ describe('toDatetimeLocal', () => {
     const result = toDatetimeLocal('2025-02-10T18:30:00.000Z');
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/);
     expect(result).toContain('2025');
+  });
+});
+
+describe('deleteCategory', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('removes the category from the list', () => {
+    setCategories([
+      { id: 'a', name: 'Work' },
+      { id: 'b', name: 'Play' },
+    ]);
+    deleteCategory('a');
+    const cats = getCategories();
+    expect(cats).toHaveLength(1);
+    expect(cats[0].id).toBe('b');
+  });
+
+  it('reassigns orphaned sessions to Uncategorized', () => {
+    setCategories([{ id: 'a', name: 'Work' }]);
+    setSessions([
+      { id: 's1', categoryId: 'a', categoryName: 'Work', duration: 100 },
+      { id: 's2', categoryId: 'b', categoryName: 'Play', duration: 200 },
+    ]);
+    deleteCategory('a');
+    const sessions = getSessions();
+    expect(sessions[0].categoryId).toBe('__uncategorized__');
+    expect(sessions[0].categoryName).toBe('Uncategorized');
+    expect(sessions[1].categoryId).toBe('b');
+    expect(sessions[1].categoryName).toBe('Play');
+  });
+
+  it('reassigns an active session to Uncategorized when its category is deleted', () => {
+    setCategories([{ id: 'a', name: 'Work' }]);
+    setActiveSession({ categoryId: 'a', categoryName: 'Work', startTime: new Date().toISOString() });
+    deleteCategory('a');
+    const active = getActiveSession();
+    expect(active.categoryId).toBe('__uncategorized__');
+    expect(active.categoryName).toBe('Uncategorized');
+  });
+
+  it('does not modify sessions when no sessions belong to the deleted category', () => {
+    setCategories([
+      { id: 'a', name: 'Work' },
+      { id: 'b', name: 'Play' },
+    ]);
+    setSessions([
+      { id: 's1', categoryId: 'b', categoryName: 'Play', duration: 100 },
+    ]);
+    deleteCategory('a');
+    const sessions = getSessions();
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].categoryId).toBe('b');
+  });
+
+  it('does not touch the active session when it belongs to a different category', () => {
+    setCategories([{ id: 'a', name: 'Work' }, { id: 'b', name: 'Play' }]);
+    setActiveSession({ categoryId: 'b', categoryName: 'Play', startTime: new Date().toISOString() });
+    deleteCategory('a');
+    const active = getActiveSession();
+    expect(active.categoryId).toBe('b');
+    expect(active.categoryName).toBe('Play');
+  });
+
+  it('works when there are no sessions at all', () => {
+    setCategories([{ id: 'a', name: 'Work' }]);
+    deleteCategory('a');
+    expect(getCategories()).toHaveLength(0);
+    expect(getSessions()).toHaveLength(0);
+    expect(getActiveSession()).toBeNull();
   });
 });
