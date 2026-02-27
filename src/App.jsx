@@ -31,6 +31,7 @@ function localFingerprint() {
 export default function App() {
   const [user, setUser] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [syncVersion, setSyncVersion] = useState(0);
   const uidRef = useRef(null);
   const syncPausedRef = useRef(false);
   const unsubSnapshotRef = useRef(null);
@@ -54,6 +55,7 @@ export default function App() {
 
     const a = getActiveSession();
     if (a) setSelectedCategoryId(a.categoryId);
+    setSyncVersion((v) => v + 1);
     refresh();
   }
 
@@ -132,6 +134,7 @@ export default function App() {
           <Stopwatch
             selectedCategoryId={selectedCategoryId}
             onSessionChange={refresh}
+            syncVersion={syncVersion}
           />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minHeight: 0 }}>

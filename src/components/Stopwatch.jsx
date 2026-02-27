@@ -5,7 +5,7 @@ import {
   getActiveSession, setActiveSession, formatDuration,
 } from '../core.js';
 
-export default function Stopwatch({ selectedCategoryId, onSessionChange }) {
+export default function Stopwatch({ selectedCategoryId, onSessionChange, syncVersion }) {
   const [elapsed, setElapsed] = useState(0);
   const [active, setActive] = useState(getActiveSession());
   const intervalRef = useRef(null);
@@ -14,6 +14,10 @@ export default function Stopwatch({ selectedCategoryId, onSessionChange }) {
   const selectedCat = categories.find((c) => c.id === selectedCategoryId);
 
   useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     const a = getActiveSession();
     setActive(a);
     if (a) {
@@ -23,11 +27,13 @@ export default function Stopwatch({ selectedCategoryId, onSessionChange }) {
       };
       tick();
       intervalRef.current = setInterval(tick, 100);
+    } else {
+      setElapsed(0);
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, syncVersion]);
 
   function startSession() {
     if (!selectedCat) return;
