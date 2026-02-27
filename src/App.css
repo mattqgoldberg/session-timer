@@ -678,8 +678,14 @@ input, select {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--color-heading);
+}
+
+.session-date {
+  font-size: 0.8rem;
+  color: var(--color-muted);
   flex: 1;
   text-align: right;
+  white-space: nowrap;
 }
 
 .session-actions {

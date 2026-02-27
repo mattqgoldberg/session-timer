@@ -111,7 +111,7 @@ export default function SessionList({ onDataChange, style }) {
     >
       <div className="card-title">
         <span className="card-title-icon">📋</span>
-        Recent Sessions
+        All Sessions
       </div>
 
       {allSessions.length === 0 ? (
@@ -142,6 +142,10 @@ export default function SessionList({ onDataChange, style }) {
                   );
                 }
 
+                const startDate = new Date(s.startTime).toLocaleDateString(undefined, {
+                  month: 'short', day: 'numeric', year: 'numeric',
+                });
+
                 return (
                   <motion.div
                     key={s.id}
@@ -159,6 +163,7 @@ export default function SessionList({ onDataChange, style }) {
                       {s.categoryName}
                     </span>
                     <span className="session-duration">{formatDuration(dur)}</span>
+                    <span className="session-date">{startDate}</span>
                     <span className="session-actions">
                       <button
                         className="btn-icon"
