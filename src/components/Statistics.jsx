@@ -64,7 +64,7 @@ function PieChart({ aggregated }) {
 }
 
 export default function Statistics() {
-  const [range, setRange] = useState('all');
+  const [range, setRange] = useState('week');
   const [offset, setOffset] = useState(0);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
