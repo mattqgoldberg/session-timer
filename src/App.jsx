@@ -5,7 +5,10 @@ import {
   getActiveSession, setActiveSession,
   setOnDataChange,
 } from './core.js';
-import { signInWithGoogle, firebaseSignOut, onAuthChange, pushToFirestore, pullFromFirestore } from './firebase.js';
+import {
+  signInWithGoogle, firebaseSignOut, onAuthChange,
+  pushToFirestore, pullFromFirestore, subscribeToFirestore,
+} from './firebase.js';
 import Header from './components/Header';
 import CategoryManager from './components/CategoryManager';
 import Stopwatch from './components/Stopwatch';
@@ -17,15 +20,46 @@ function useForceUpdate() {
   return useCallback(() => setTick((t) => t + 1), []);
 }
 
+function localFingerprint() {
+  return JSON.stringify({
+    c: getCategories(),
+    s: getSessions(),
+    a: getActiveSession(),
+  });
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const uidRef = useRef(null);
   const syncPausedRef = useRef(false);
+  const unsubSnapshotRef = useRef(null);
+  const fingerprintRef = useRef('');
   const refresh = useForceUpdate();
+
+  function hydrateFromRemote(data) {
+    const remoteFingerprint = JSON.stringify({
+      c: data.categories,
+      s: data.sessions,
+      a: data.active,
+    });
+    if (remoteFingerprint === fingerprintRef.current) return;
+
+    syncPausedRef.current = true;
+    setCategories(data.categories);
+    setSessions(data.sessions);
+    setActiveSession(data.active);
+    fingerprintRef.current = localFingerprint();
+    syncPausedRef.current = false;
+
+    const a = getActiveSession();
+    if (a) setSelectedCategoryId(a.categoryId);
+    refresh();
+  }
 
   useEffect(() => {
     setOnDataChange(() => {
+      fingerprintRef.current = localFingerprint();
       if (uidRef.current && !syncPausedRef.current) {
         pushToFirestore(uidRef.current).catch(() => {});
       }
@@ -33,35 +67,51 @@ export default function App() {
 
     const active = getActiveSession();
     if (active) setSelectedCategoryId(active.categoryId);
+    fingerprintRef.current = localFingerprint();
 
-    const unsub = onAuthChange(async (firebaseUser) => {
+    const unsubAuth = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser);
+
+      if (unsubSnapshotRef.current) {
+        unsubSnapshotRef.current();
+        unsubSnapshotRef.current = null;
+      }
+
       if (firebaseUser) {
         uidRef.current = firebaseUser.uid;
+
         try {
           const data = await pullFromFirestore(firebaseUser.uid);
           if (data) {
-            syncPausedRef.current = true;
-            setCategories(data.categories);
-            setSessions(data.sessions);
-            setActiveSession(data.active);
-            syncPausedRef.current = false;
-            const a = getActiveSession();
-            if (a) setSelectedCategoryId(a.categoryId);
-            refresh();
+            hydrateFromRemote(data);
           } else {
             await pushToFirestore(firebaseUser.uid);
           }
         } catch {
-          // Firestore unavailable
+          // Firestore unavailable for initial pull
         }
+
+        unsubSnapshotRef.current = subscribeToFirestore(firebaseUser.uid, (data) => {
+          hydrateFromRemote(data);
+        });
       } else {
         uidRef.current = null;
       }
     });
 
+    function handleVisibility() {
+      if (document.visibilityState === 'visible' && uidRef.current) {
+        pullFromFirestore(uidRef.current)
+          .then((data) => { if (data) hydrateFromRemote(data); })
+          .catch(() => {});
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
-      unsub();
+      unsubAuth();
+      if (unsubSnapshotRef.current) unsubSnapshotRef.current();
+      document.removeEventListener('visibilitychange', handleVisibility);
       setOnDataChange(null);
     };
   }, [refresh]);

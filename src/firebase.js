@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { getCategories, getSessions, getActiveSession } from './core.js';
 
 const firebaseConfig = {
@@ -61,4 +61,18 @@ export async function pullFromFirestore(uid) {
     sessions: Array.isArray(data.sessions) ? data.sessions : [],
     active: data.active ?? null,
   };
+}
+
+export function subscribeToFirestore(uid, callback) {
+  if (!db || !uid) return () => {};
+  const ref = doc(db, 'users', uid);
+  return onSnapshot(ref, (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    callback({
+      categories: Array.isArray(data.categories) ? data.categories : [],
+      sessions: Array.isArray(data.sessions) ? data.sessions : [],
+      active: data.active ?? null,
+    });
+  });
 }
