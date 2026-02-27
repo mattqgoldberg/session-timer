@@ -671,6 +671,10 @@ input, select {
   font-size: 0.8rem;
   font-weight: 600;
   flex-shrink: 0;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .session-duration {
@@ -678,19 +682,25 @@ input, select {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--color-heading);
+  width: 72px;
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .session-date {
   font-size: 0.8rem;
   color: var(--color-muted);
-  flex: 1;
+  width: 90px;
   text-align: right;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .session-actions {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .session-pagination {
