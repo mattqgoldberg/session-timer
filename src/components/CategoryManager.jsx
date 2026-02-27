@@ -165,6 +165,7 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ scale: 1.06 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                   >
