@@ -400,12 +400,14 @@ input, select {
   justify-content: center;
   color: var(--color-muted);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.15s ease, color 0.15s ease, transform 0.15s ease;
   cursor: pointer;
 }
 
 .category-pill-wrapper:hover .pill-edit-btn {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .pill-edit-btn:hover {
