@@ -8,6 +8,7 @@ import {
   getActiveSession,
   setActiveSession,
   deleteCategory,
+  updateCategory,
   formatDuration,
   formatDurationLong,
   getStatsRangeBounds,
@@ -43,6 +44,15 @@ describe('categories', () => {
     setCategories([{ id: 'c1', name: 'Work' }, { id: 'c2', name: 'Personal' }]);
     expect(getCategories()).toHaveLength(2);
   });
+
+  it('updateCategory updates the category record', () => {
+    setCategories([{ id: 'c1', name: 'Work', color: '#000000' }]);
+    updateCategory('c1', { name: 'Deep Work', color: '#ffffff' });
+    const cats = getCategories();
+    expect(cats).toHaveLength(1);
+    expect(cats[0].name).toBe('Deep Work');
+    expect(cats[0].color).toBe('#ffffff');
+  });
 });
 
 describe('sessions', () => {
@@ -59,6 +69,20 @@ describe('sessions', () => {
   it('persists to localStorage', () => {
     setSessions([{ id: 's1', categoryId: 'c1', categoryName: 'Work', startTime: '2025-01-01T10:00:00.000Z', endTime: '2025-01-01T11:00:00.000Z' }]);
     expect(localStorage.getItem(STORAGE_KEYS.sessions)).toContain('s1');
+  });
+
+  it('updateCategory updates existing sessions categoryName when name changes', () => {
+    setCategories([{ id: 'c1', name: 'Work' }]);
+    setSessions([
+      { id: 's1', categoryId: 'c1', categoryName: 'Work', startTime: '2025-01-01T10:00:00.000Z', endTime: '2025-01-01T11:00:00.000Z' },
+      { id: 's2', categoryId: 'c2', categoryName: 'Play', startTime: '2025-01-01T12:00:00.000Z', endTime: '2025-01-01T13:00:00.000Z' },
+    ]);
+    updateCategory('c1', { name: 'Deep Work' });
+    const sessions = getSessions();
+    const s1 = sessions.find((s) => s.id === 's1');
+    const s2 = sessions.find((s) => s.id === 's2');
+    expect(s1.categoryName).toBe('Deep Work');
+    expect(s2.categoryName).toBe('Play');
   });
 });
 
@@ -78,6 +102,15 @@ describe('active session', () => {
     setActiveSession(null);
     expect(getActiveSession()).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.active)).toBeNull();
+  });
+
+  it('updateCategory updates the active session categoryName when name changes', () => {
+    setCategories([{ id: 'c1', name: 'Work' }]);
+    const active = { categoryId: 'c1', categoryName: 'Work', startTime: '2025-01-01T10:00:00.000Z' };
+    setActiveSession(active);
+    updateCategory('c1', { name: 'Deep Work' });
+    const updated = getActiveSession();
+    expect(updated.categoryName).toBe('Deep Work');
   });
 });
 

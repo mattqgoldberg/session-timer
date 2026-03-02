@@ -175,6 +175,33 @@ export function aggregateByCategory(sessions) {
   return Array.from(byId.values()).sort((a, b) => b.ms - a.ms);
 }
 
+export function updateCategory(categoryId, { name: newName, color: newColor }) {
+  const cats = getCategories();
+  const cat = cats.find((c) => c.id === categoryId);
+  if (cat) {
+    if (typeof newName === 'string') cat.name = newName;
+    if (typeof newColor === 'string') cat.color = newColor;
+    setCategories(cats);
+  }
+
+  if (typeof newName === 'string') {
+    const sessions = getSessions();
+    let changed = false;
+    for (const s of sessions) {
+      if (s.categoryId === categoryId) {
+        s.categoryName = newName;
+        changed = true;
+      }
+    }
+    if (changed) setSessions(sessions);
+
+    const active = getActiveSession();
+    if (active && active.categoryId === categoryId) {
+      setActiveSession({ ...active, categoryName: newName });
+    }
+  }
+}
+
 export function toDatetimeLocal(isoString) {
   const d = new Date(isoString);
   const pad = (n) => String(n).padStart(2, '0');

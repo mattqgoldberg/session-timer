@@ -1,6 +1,11 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getCategories, setCategories, deleteCategory as deleteCategoryCore } from '../core.js';
+import {
+  getCategories,
+  setCategories,
+  deleteCategory as deleteCategoryCore,
+  updateCategory,
+} from '../core.js';
 import { COLOR_PALETTE, DEFAULT_COLOR, colorVariants, getCategoryColor } from '../colors.js';
 
 function ColorPicker({ value, onChange }) {
@@ -91,14 +96,8 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
   }
 
   function saveEdit(id, newName, newColor) {
-    const cats = getCategories();
-    const cat = cats.find((c) => c.id === id);
-    if (cat) {
-      cat.name = newName;
-      cat.color = newColor;
-      setCategories(cats);
-      onDataChange();
-    }
+    updateCategory(id, { name: newName, color: newColor });
+    onDataChange();
     setEditingCatId(null);
   }
 
