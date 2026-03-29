@@ -14,15 +14,32 @@ function getStorage() {
   return typeof globalThis !== 'undefined' && globalThis.localStorage;
 }
 
+function normalizeCategory(category) {
+  if (!category || typeof category !== 'object') return category;
+  return {
+    ...category,
+    hidden: category.hidden === true,
+  };
+}
+
 export function getCategories() {
   const storage = getStorage();
   if (!storage) return [];
   try {
     const raw = storage.getItem(STORAGE_KEYS.categories);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(normalizeCategory) : [];
   } catch {
     return [];
   }
+}
+
+export function getVisibleCategories() {
+  return getCategories().filter((category) => !category.hidden);
+}
+
+export function getHiddenCategories() {
+  return getCategories().filter((category) => category.hidden);
 }
 
 export function setCategories(categories) {
@@ -175,12 +192,13 @@ export function aggregateByCategory(sessions) {
   return Array.from(byId.values()).sort((a, b) => b.ms - a.ms);
 }
 
-export function updateCategory(categoryId, { name: newName, color: newColor }) {
+export function updateCategory(categoryId, { name: newName, color: newColor, hidden: newHidden }) {
   const cats = getCategories();
   const cat = cats.find((c) => c.id === categoryId);
   if (cat) {
     if (typeof newName === 'string') cat.name = newName;
     if (typeof newColor === 'string') cat.color = newColor;
+    if (typeof newHidden === 'boolean') cat.hidden = newHidden;
     setCategories(cats);
   }
 

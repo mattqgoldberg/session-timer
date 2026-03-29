@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  getCategories, getSessions, setSessions,
+  getCategories, getVisibleCategories, getSessions, setSessions,
   formatDuration, toDatetimeLocal,
 } from '../core.js';
 import { colorVariants, getCategoryColor } from '../colors.js';
@@ -14,7 +14,11 @@ function getBadgeColor(categoryId, categories) {
 }
 
 function EditForm({ session, onSave, onCancel }) {
-  const categories = getCategories();
+  const visibleCategories = getVisibleCategories();
+  const currentCategory = getCategories().find((c) => c.id === session.categoryId);
+  const categories = currentCategory && currentCategory.hidden
+    ? [...visibleCategories, currentCategory]
+    : visibleCategories;
   const [catId, setCatId] = useState(session.categoryId);
   const [startVal, setStartVal] = useState(toDatetimeLocal(session.startTime));
   const [endVal, setEndVal] = useState(toDatetimeLocal(session.endTime));

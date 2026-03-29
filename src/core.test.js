@@ -2,12 +2,14 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   STORAGE_KEYS,
   getCategories,
+  getHiddenCategories,
   setCategories,
   getSessions,
   setSessions,
   getActiveSession,
   setActiveSession,
   deleteCategory,
+  getVisibleCategories,
   updateCategory,
   formatDuration,
   formatDurationLong,
@@ -31,7 +33,7 @@ describe('categories', () => {
 
   it('returns what was set via setCategories', () => {
     setCategories([{ id: 'c1', name: 'Work' }]);
-    expect(getCategories()).toEqual([{ id: 'c1', name: 'Work' }]);
+    expect(getCategories()).toEqual([{ id: 'c1', name: 'Work', hidden: false }]);
   });
 
   it('persists to localStorage', () => {
@@ -52,6 +54,29 @@ describe('categories', () => {
     expect(cats).toHaveLength(1);
     expect(cats[0].name).toBe('Deep Work');
     expect(cats[0].color).toBe('#ffffff');
+    expect(cats[0].hidden).toBe(false);
+  });
+
+  it('defaults missing hidden flags to false', () => {
+    localStorage.setItem(STORAGE_KEYS.categories, JSON.stringify([{ id: 'c1', name: 'Work' }]));
+    expect(getCategories()).toEqual([{ id: 'c1', name: 'Work', hidden: false }]);
+  });
+
+  it('returns visible and hidden categories separately', () => {
+    setCategories([
+      { id: 'c1', name: 'Work', hidden: false },
+      { id: 'c2', name: 'Archive', hidden: true },
+    ]);
+    expect(getVisibleCategories().map((cat) => cat.id)).toEqual(['c1']);
+    expect(getHiddenCategories().map((cat) => cat.id)).toEqual(['c2']);
+  });
+
+  it('updateCategory can hide and unhide a category', () => {
+    setCategories([{ id: 'c1', name: 'Work', hidden: false }]);
+    updateCategory('c1', { hidden: true });
+    expect(getCategories()[0].hidden).toBe(true);
+    updateCategory('c1', { hidden: false });
+    expect(getCategories()[0].hidden).toBe(false);
   });
 });
 

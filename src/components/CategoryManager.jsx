@@ -1,7 +1,9 @@
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   getCategories,
+  getVisibleCategories,
+  getHiddenCategories,
   setCategories,
   deleteCategory as deleteCategoryCore,
   updateCategory,
@@ -25,7 +27,7 @@ function ColorPicker({ value, onChange }) {
   );
 }
 
-function EditPopover({ cat, onSave, onDelete, onClose }) {
+function EditPopover({ cat, onSave, onDelete, onToggleHidden, onClose }) {
   const [name, setName] = useState(cat.name);
   const [color, setColor] = useState(getCategoryColor(cat));
 
@@ -54,6 +56,13 @@ function EditPopover({ cat, onSave, onDelete, onClose }) {
         <ColorPicker value={color} onChange={setColor} />
         <div className="category-edit-actions">
           <button type="submit" className="btn btn-primary btn-sm">Save</button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => onToggleHidden(cat.id, !cat.hidden)}
+          >
+            {cat.hidden ? 'Unhide' : 'Hide'}
+          </button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={onClose}>Cancel</button>
           <button
             type="button"
@@ -73,15 +82,24 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
   const [inputValue, setInputValue] = useState('');
   const [selectedColor, setSelectedColor] = useState(DEFAULT_COLOR);
   const [editingCatId, setEditingCatId] = useState(null);
+  const [activeTab, setActiveTab] = useState('visible');
   const inputRef = useRef(null);
-  const categories = getCategories();
+  const visibleCategories = getVisibleCategories();
+  const hiddenCategories = getHiddenCategories();
+  const categories = activeTab === 'hidden' ? hiddenCategories : visibleCategories;
+
+  useEffect(() => {
+    if (activeTab === 'hidden' && hiddenCategories.length === 0) {
+      setActiveTab('visible');
+    }
+  }, [activeTab, hiddenCategories.length]);
 
   function addCategory() {
     const name = inputValue.trim();
     if (!name) return;
     const cats = getCategories();
     const id = crypto.randomUUID ? crypto.randomUUID() : `cat_${Date.now()}`;
-    cats.push({ id, name, color: selectedColor });
+    cats.push({ id, name, color: selectedColor, hidden: false });
     setCategories(cats);
     setInputValue('');
     const nextIdx = COLOR_PALETTE.indexOf(selectedColor);
@@ -97,6 +115,14 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
 
   function saveEdit(id, newName, newColor) {
     updateCategory(id, { name: newName, color: newColor });
+    onDataChange();
+    setEditingCatId(null);
+  }
+
+  function setCategoryHidden(id, hidden) {
+    updateCategory(id, { hidden });
+    if (hidden && selectedCategoryId === id) onSelectCategory(null);
+    if (!hidden) setActiveTab('visible');
     onDataChange();
     setEditingCatId(null);
   }
@@ -142,14 +168,49 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
 
       <ColorPicker value={selectedColor} onChange={setSelectedColor} />
 
-      {categories.length === 0 ? (
-        <p className="empty-state">No categories yet — add one above!</p>
-      ) : (
-        <div className="category-pills">
-          <AnimatePresence>
+      {(visibleCategories.length > 0 || hiddenCategories.length > 0) && (
+        <div className="category-tabs" role="tablist" aria-label="Category tabs">
+          <button
+            type="button"
+            className={`category-tab${activeTab === 'visible' ? ' active' : ''}`}
+            onClick={() => setActiveTab('visible')}
+          >
+            Categories ({visibleCategories.length})
+          </button>
+          <button
+            type="button"
+            className={`category-tab${activeTab === 'hidden' ? ' active' : ''}`}
+            onClick={() => setActiveTab('hidden')}
+          >
+            Hidden ({hiddenCategories.length})
+          </button>
+        </div>
+      )}
+
+      <AnimatePresence mode="wait" initial={false}>
+        {categories.length === 0 ? (
+          <motion.p
+            key={`${activeTab}-empty`}
+            className="empty-state"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+          >
+            {activeTab === 'hidden' ? 'No hidden categories.' : 'No categories yet — add one above!'}
+          </motion.p>
+        ) : (
+          <motion.div
+            key={activeTab}
+            className="category-pills"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
             {categories.map((cat) => {
               const cv = colorVariants(getCategoryColor(cat));
-              const isSelected = cat.id === selectedCategoryId;
+              const isSelected = activeTab === 'visible' && cat.id === selectedCategoryId;
               return (
                 <div key={cat.id} className="category-pill-wrapper">
                   <motion.button
@@ -159,14 +220,13 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
                       color: cv.text,
                       borderColor: isSelected ? '#1C1917' : cv.border,
                     }}
-                    onClick={() => onSelectCategory(cat.id)}
+                    onClick={() => {
+                      if (activeTab === 'visible') onSelectCategory(cat.id);
+                    }}
                     layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
+                    whileHover={activeTab === 'visible' ? { scale: 1.03 } : { scale: 1.01 }}
+                    whileTap={activeTab === 'visible' ? { scale: 0.98 } : { scale: 0.99 }}
+                    transition={{ duration: 0.15 }}
                   >
                     <span className="pill-color-dot" style={{ background: getCategoryColor(cat) }} />
                     {cat.name}
@@ -190,6 +250,7 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
                         cat={cat}
                         onSave={saveEdit}
                         onDelete={deleteCategory}
+                        onToggleHidden={setCategoryHidden}
                         onClose={() => setEditingCatId(null)}
                       />
                     )}
@@ -197,9 +258,9 @@ export default function CategoryManager({ selectedCategoryId, onSelectCategory, 
                 </div>
               );
             })}
-          </AnimatePresence>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  getCategories, getSessions, setSessions,
+  getVisibleCategories, getSessions, setSessions,
   getActiveSession, setActiveSession, formatDuration,
 } from '../core.js';
 
@@ -10,7 +10,7 @@ export default function Stopwatch({ selectedCategoryId, onSessionChange, syncVer
   const [active, setActive] = useState(getActiveSession());
   const intervalRef = useRef(null);
 
-  const categories = getCategories();
+  const categories = getVisibleCategories();
   const selectedCat = categories.find((c) => c.id === selectedCategoryId);
 
   useEffect(() => {
