@@ -46,6 +46,12 @@
   padding: 0;
 }
 
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font);
   background: var(--color-bg);
@@ -69,6 +75,7 @@ input, select {
 
 /* ── Layout ────────────────────────────────────────────── */
 .app-container {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
   padding: 0 20px 40px;
@@ -79,6 +86,10 @@ input, select {
   grid-template-columns: 1fr 1fr;
   gap: 24px;
   align-items: stretch;
+}
+
+.main-grid > * {
+  min-width: 0;
 }
 
 @media (max-width: 768px) {
